@@ -19,7 +19,14 @@ class HomeView extends GetView<HomeController> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 for (Color color in controller.currentPalette)
-                  Container(width: 100, height: 100, color: color),
+                  AnimatedContainer(
+                    duration: Duration(milliseconds: 500),
+
+                    width: 100,
+                    height: 100,
+                    color: color,
+                    margin: EdgeInsets.symmetric(vertical: 3),
+                  ),
                 SizedBox(height: 20),
                 InkWell(
                   onTap: controller.generateColorPalette,
