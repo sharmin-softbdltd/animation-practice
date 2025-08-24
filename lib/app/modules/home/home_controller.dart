@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 
 class HomeController extends GetxController {
   final RxList<Color> currentPalette = <Color>[].obs;
+  final isExpanded = false.obs;
 
   @override
   void onInit() {
