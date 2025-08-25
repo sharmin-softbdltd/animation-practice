@@ -28,27 +28,48 @@ class HtmlSearchView extends GetView<HtmlSearchController> {
           padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
           child: Column(
             children: [
-              TextFormField(
-                controller: controller.searchController,
+              Obx(() {
+                return TextFormField(
+                  controller: controller.searchController,
 
-                decoration: InputDecoration(
-                  hintText: 'Search...',
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 5,
+                  decoration: InputDecoration(
+                    hintText: 'Search...',
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 5,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    suffix: controller.matchQueryCount.value != 0
+                        ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(controller.matchQueryCount.value.toString()),
+                        SizedBox(width: 5),
+                        InkWell(
+                          onTap: controller.nextMatch,
+                          child: Icon(Icons.keyboard_arrow_down),
+                        ),
+                      ],
+                    )
+                        : null,
                   ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
+                );
+              }),
               Expanded(
                 child: SingleChildScrollView(
-                  // padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                  controller: controller.scrollController,
                   child: Column(
                     children: [
                       Obx(() {
-                        return Html(data: controller.highLightedContent.value);
+                        return Html(
+                          data: controller.highLightedContent.value,
+                          // anchorKey: controller.anchorKey,
+                          doNotRenderTheseTags: {"title",},
+
+                        );
                       }),
                       SizedBox(height: 20),
                       ElevatedButton(

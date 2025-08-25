@@ -33,7 +33,7 @@ class HomeView extends GetView<HomeController> {
                   onTap: controller.generateColorPalette,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.blue,
+                      color: controller.currentPalette[0],
                       borderRadius: BorderRadius.circular(10),
                     ),
                     padding: const EdgeInsets.symmetric(
@@ -57,7 +57,7 @@ class HomeView extends GetView<HomeController> {
                     width: controller.isExpanded.value ? 150 : 100,
                     decoration: BoxDecoration(
                       color: controller.isExpanded.value
-                          ? controller.currentPalette[0]
+                          ? controller.currentPalette[2]
                           : controller.currentPalette[1],
                       borderRadius: BorderRadius.circular(10),
                     ),

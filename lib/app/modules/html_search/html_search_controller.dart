@@ -2,13 +2,15 @@ import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
 class HtmlSearchController extends GetxController {
+  GlobalKey? anchorKey = GlobalKey();
+
+  final scrollController = ScrollController();
   final searchController = TextEditingController();
   final content = """
   <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Searchable HTML</title>
 </head>
 <body>
   <h1>Big HTML Content</h1>
@@ -112,6 +114,9 @@ class HtmlSearchController extends GetxController {
 
   """;
   final highLightedContent = "".obs;
+  final matchQueryCount = 0.obs;
+  List<Map<String, String>> allMatches = [];
+  final activeIndex = 0.obs;
 
   @override
   void onInit() {
@@ -125,23 +130,70 @@ class HtmlSearchController extends GetxController {
   void search(String query) {
     if (query.isEmpty) {
       highLightedContent.value = content;
+      allMatches.clear();
       return;
     }
+    matchQueryCount.value = 0;
     final escapedQuery = RegExp.escape(query);
     final regex = RegExp(escapedQuery, caseSensitive: false);
+    final plainText = content.replaceAll(RegExp(r'<[^>]+>'), '');
+    matchQueryCount.value = regex.allMatches(plainText).length;
 
     final parts = RegExp(r'(<[^>]+>|[^<]+)').allMatches(content);
+    int matchCounter = 0;
     String matchedContent = parts.map((part) {
       String str = part.group(0) ?? '';
       if (str.startsWith('<')) {
         return str;
       } else {
         return str.replaceAllMapped(regex, (match) {
-          return '<mark>${match.group(0)}</mark>';
+          final id = "match$matchCounter";
+          allMatches.add({"id": id, "text": match[0]!});
+          final color = matchCounter == activeIndex ? "red" : "yellow";
+          matchCounter++;
+          return '<mark id="match-$matchIndex" style="background-color:$color;>${match.group(0)}</mark>';
         });
       }
     }).join();
 
     highLightedContent.value = matchedContent;
   }
+
+  void nextMatch() {
+    if (allMatches.isEmpty) return;
+    activeIndex.value = (activeIndex.value + 1) % allMatches.length;
+    search(searchController.text);
+    scrollToActive();
+  }
+
+  void prevMatch() {
+    if (allMatches.isEmpty) return;
+    activeIndex.value =
+        (activeIndex.value - 1 + allMatches.length) % allMatches.length;
+    search(searchController.text);
+    scrollToActive();
+  }
+
+  void scrollToActive() {
+    scrollController.animateTo(
+      activeIndex.value * 50.0, // adjust if needed
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  // void onDownArrowClick() {
+  //   if (scrollController.hasClients) {
+  //     double newOffset = scrollController.offset + 100;
+  //     if (newOffset > scrollController.position.maxScrollExtent) {
+  //       newOffset = scrollController.position.maxScrollExtent;
+  //     }
+  //
+  //     scrollController.animateTo(
+  //       newOffset,
+  //       duration: Duration(milliseconds: 300),
+  //       curve: Curves.easeInOut,
+  //     );
+  //   }
+  // }
 }
