@@ -2,10 +2,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
 class HtmlSearchController extends GetxController {
-  GlobalKey? anchorKey = GlobalKey();
-
   final scrollController = ScrollController();
   final searchController = TextEditingController();
+
   final content = """
   <!DOCTYPE html>
 <html lang="en">
@@ -113,15 +112,15 @@ class HtmlSearchController extends GetxController {
 
 
   """;
+  List<int> matchIndexes = [];
   final highLightedContent = "".obs;
-  final matchQueryCount = 0.obs;
-  List<Map<String, String>> allMatches = [];
-  final activeIndex = 0.obs;
+  final activeIndex = 0.obs, totalMatchNumber = 0.obs;
 
   @override
   void onInit() {
     highLightedContent.value = content;
     searchController.addListener(() {
+      activeIndex.value = 0;
       search(searchController.text);
     });
     super.onInit();
@@ -130,14 +129,16 @@ class HtmlSearchController extends GetxController {
   void search(String query) {
     if (query.isEmpty) {
       highLightedContent.value = content;
-      allMatches.clear();
+      matchIndexes.clear();
+      activeIndex.value = 0;
+      totalMatchNumber.value = matchIndexes.length;
+
       return;
     }
-    matchQueryCount.value = 0;
     final escapedQuery = RegExp.escape(query);
     final regex = RegExp(escapedQuery, caseSensitive: false);
-    final plainText = content.replaceAll(RegExp(r'<[^>]+>'), '');
-    matchQueryCount.value = regex.allMatches(plainText).length;
+    // final plainText = content.replaceAll(RegExp(r'<[^>]+>'), '');
+    // matchQueryCount.value = regex.allMatches(plainText).length;
 
     final parts = RegExp(r'(<[^>]+>|[^<]+)').allMatches(content);
     int matchCounter = 0;
@@ -147,53 +148,40 @@ class HtmlSearchController extends GetxController {
         return str;
       } else {
         return str.replaceAllMapped(regex, (match) {
-          final id = "match$matchCounter";
-          allMatches.add({"id": id, "text": match[0]!});
-          final color = matchCounter == activeIndex ? "red" : "yellow";
+          final color = matchCounter == activeIndex.value ? "red" : "yellow";
           matchCounter++;
-          return '<mark id="match-$matchIndex" style="background-color:$color;>${match.group(0)}</mark>';
+          return '<mark  style="background-color:$color;">${match.group(0)}</mark>';
         });
       }
     }).join();
 
     highLightedContent.value = matchedContent;
+    matchIndexes = List.generate(matchCounter, (index) => index);
+    totalMatchNumber.value = matchIndexes.length;
   }
 
   void nextMatch() {
-    if (allMatches.isEmpty) return;
-    activeIndex.value = (activeIndex.value + 1) % allMatches.length;
+    if (matchIndexes.isEmpty) return;
+    activeIndex.value = (activeIndex.value + 1) % matchIndexes.length;
     search(searchController.text);
     scrollToActive();
   }
 
   void prevMatch() {
-    if (allMatches.isEmpty) return;
+    if (matchIndexes.isEmpty) return;
     activeIndex.value =
-        (activeIndex.value - 1 + allMatches.length) % allMatches.length;
+        (activeIndex.value - 1 + matchIndexes.length) % matchIndexes.length;
     search(searchController.text);
     scrollToActive();
   }
 
   void scrollToActive() {
     scrollController.animateTo(
-      activeIndex.value * 50.0, // adjust if needed
+      activeIndex.value * 85.0 % scrollController.position.maxScrollExtent,
+
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
   }
 
-  // void onDownArrowClick() {
-  //   if (scrollController.hasClients) {
-  //     double newOffset = scrollController.offset + 100;
-  //     if (newOffset > scrollController.position.maxScrollExtent) {
-  //       newOffset = scrollController.position.maxScrollExtent;
-  //     }
-  //
-  //     scrollController.animateTo(
-  //       newOffset,
-  //       duration: Duration(milliseconds: 300),
-  //       curve: Curves.easeInOut,
-  //     );
-  //   }
-  // }
 }

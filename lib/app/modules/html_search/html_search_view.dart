@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 import 'package:get/get.dart';
 
 import '../../routes/app_pages.dart';
@@ -31,29 +31,58 @@ class HtmlSearchView extends GetView<HtmlSearchController> {
               Obx(() {
                 return TextFormField(
                   controller: controller.searchController,
-
                   decoration: InputDecoration(
                     hintText: 'Search...',
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 20,
-                      vertical: 5,
+                      vertical: 15,
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    suffix: controller.matchQueryCount.value != 0
+                    suffix: controller.totalMatchNumber.value != 0
                         ? Row(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Text(controller.matchQueryCount.value.toString()),
-                        SizedBox(width: 5),
-                        InkWell(
-                          onTap: controller.nextMatch,
-                          child: Icon(Icons.keyboard_arrow_down),
-                        ),
-                      ],
-                    )
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(
+                                "${controller.activeIndex.value + 1}/${controller.totalMatchNumber.value}",
+                              ),
+                              SizedBox(width: 5),
+                              if (controller.totalMatchNumber.value > 1)
+                                Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    SizedBox(
+                                      height: 10,
+                                      child: Center(
+                                        child: InkWell(
+                                          onTap: controller.prevMatch,
+                                          child: Icon(
+                                            Icons.keyboard_arrow_up,
+                                            size: 15,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      height: 10,
+                                      child: Center(
+                                        child: InkWell(
+                                          onTap: controller.nextMatch,
+                                          child: Icon(
+                                            Icons.keyboard_arrow_down,
+                                            size: 15,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                            ],
+                          )
                         : null,
                   ),
                 );
@@ -61,15 +90,11 @@ class HtmlSearchView extends GetView<HtmlSearchController> {
               Expanded(
                 child: SingleChildScrollView(
                   controller: controller.scrollController,
+                  padding: EdgeInsets.only(top: 20),
                   child: Column(
                     children: [
                       Obx(() {
-                        return Html(
-                          data: controller.highLightedContent.value,
-                          // anchorKey: controller.anchorKey,
-                          doNotRenderTheseTags: {"title",},
-
-                        );
+                        return HtmlWidget(controller.highLightedContent.value);
                       }),
                       SizedBox(height: 20),
                       ElevatedButton(
