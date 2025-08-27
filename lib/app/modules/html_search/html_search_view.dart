@@ -47,7 +47,7 @@ class HtmlSearchView extends GetView<HtmlSearchController> {
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               Text(
-                                "${controller.activeIndex.value + 1}/${controller.totalMatchNumber.value}",
+                                "${controller.activeWordIndex.value + 1}/${controller.totalMatchNumber.value}",
                               ),
                               SizedBox(width: 5),
                               if (controller.totalMatchNumber.value > 1)
@@ -94,8 +94,28 @@ class HtmlSearchView extends GetView<HtmlSearchController> {
                   child: Column(
                     children: [
                       Obx(() {
-                        return HtmlWidget(controller.highLightedContent.value);
+                        return HtmlWidget(
+                          controller.highLightedContent.value,
+                          customWidgetBuilder: (element) {
+                            if (element.localName == 'p') {
+                              final paraIndex = int.tryParse(element.id ?? '');
+                              if (paraIndex != null &&
+                                  controller.matchParaKeys.containsKey(
+                                    paraIndex,
+                                  )) {
+                                return Container(
+                                  key: controller.matchParaKeys[paraIndex],
+                                  alignment: Alignment.centerLeft,
+                                  // 🔥 render this <p> (with its <mark>) as HTML again
+                                  child: HtmlWidget(element.outerHtml),
+                                );
+                              }
+                            }
+                            return null; // default rendering for others
+                          },
+                        );
                       }),
+
                       SizedBox(height: 20),
                       ElevatedButton(
                         onPressed: () {
