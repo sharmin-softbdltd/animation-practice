@@ -132,9 +132,9 @@ class HtmlSearchController extends GetxController {
 
   final highLightedContent = "".obs;
   final activeWordIndex = 0.obs,
-      totalMatchNumber = 0.obs,
+      totalMatchedWord = 0.obs,
       activeParaIndex = 0.obs;
-  final Map<int, GlobalKey> matchParaKeys =
+  final Map<int, GlobalKey> paragraphKeys =
       {}; //for para and global key of that para
   final Map<int, int> perParaMatchCounter =
       {}; // for para and how many words found which match
@@ -154,17 +154,15 @@ class HtmlSearchController extends GetxController {
       highLightedContent.value = content;
       activeWordIndex.value = 0;
       activeParaIndex.value = 0;
-      totalMatchNumber.value = 0;
+      totalMatchedWord.value = 0;
       perParaMatchCounter.clear();
-      matchParaKeys.clear();
+      paragraphKeys.clear();
       return;
     }
+    perParaMatchCounter.clear();
+
     final escapedQuery = RegExp.escape(query);
     final regex = RegExp(escapedQuery, caseSensitive: false);
-
-    int matchWordCounter = 0;
-    int paraIndex = 0;
-    perParaMatchCounter.clear();
 
     final paragraphList = RegExp(
       r'<p\b[^>]*>(.*?)</p>',
@@ -172,16 +170,17 @@ class HtmlSearchController extends GetxController {
       dotAll: true,
     ).allMatches(content);
 
+    int matchWordCounter = 0;
+    int paraIndex = 0;
+
     String newContent = paragraphList.map((paraMatch) {
       String paraText = paraMatch.group(1) ?? '';
-      if (!matchParaKeys.containsKey(paraIndex)) {
-        matchParaKeys[paraIndex] = GlobalKey(); // create key only once
+      if (!paragraphKeys.containsKey(paraIndex)) {
+        paragraphKeys[paraIndex] = GlobalKey(); // create key only once
       }
 
       if (regex.hasMatch(paraText)) {
         //IF WORD EXIST IN THAT PARA THEN STORE GLOBAL KEY FOR THAT PARA WITH INDEX
-
-        // matchParaKeys[paraIndex] = GlobalKey();
         int paraWordCounter = 0;
 
         String highlighted = paraText.replaceAllMapped(regex, (match) {
@@ -210,31 +209,35 @@ class HtmlSearchController extends GetxController {
     }).join();
 
     highLightedContent.value = newContent;
-    totalMatchNumber.value = matchWordCounter;
+    totalMatchedWord.value = matchWordCounter;
   }
 
   void nextMatch() {
-    if (totalMatchNumber.value == 0) return;
+    if (totalMatchedWord.value == 0) return;
 
-    // Move to the next word
-    activeWordIndex.value++;
-    print('para ${activeParaIndex.value}');
-    print('word no n para ${activeWordIndex.value}');
+    final paraKeys = perParaMatchCounter.keys.toList()..sort();
 
-    // Check if we need to move to the next paragraph
-    int paraIndex = activeParaIndex.value;
-    int paraMatchCount = perParaMatchCounter[activeParaIndex.value] ?? 0;
+    int currentWord = activeWordIndex.value;
+    int currentPara = activeParaIndex.value;
+    int paraMatchCount = perParaMatchCounter[currentPara] ?? 0;
+    currentWord++;
 
-    if (activeWordIndex.value >= paraMatchCount) {
-      // Move to next para that has matches
-      do {
-        paraIndex = (paraIndex + 1) % perParaMatchCounter.keys.length;
-        paraMatchCount = perParaMatchCounter[paraIndex] ?? 0;
-      } while (paraMatchCount == 0);
+    if (currentWord >= paraMatchCount) {
+      // Find index of currentPara in the list of keys
+      int currentKeyIndex = paraKeys.indexOf(currentPara);
 
-      activeParaIndex.value = paraIndex;
-      activeWordIndex.value = 0;
+      // Move to next para (wrap around with %)
+      int nextKeyIndex = (currentKeyIndex + 1) % paraKeys.length;
+      currentPara = paraKeys[nextKeyIndex];
+
+      // Reset word index for that para
+      currentWord = 0;
     }
+
+    activeParaIndex.value = currentPara;
+    activeWordIndex.value = currentWord;
+
+    print('⬅️ Now at para $currentPara, word $currentWord');
 
     search(searchController.text);
 
@@ -242,25 +245,35 @@ class HtmlSearchController extends GetxController {
   }
 
   void prevMatch() {
-    if (totalMatchNumber.value == 0) return;
+    if (totalMatchedWord.value == 0) return;
 
-    int paraIndex = activeParaIndex.value;
-    int paraMatchCount = perParaMatchCounter[paraIndex] ?? 0;
+    // Sorted list of all paras that have matches
+    final paraKeys = perParaMatchCounter.keys.toList()..sort();
 
-    activeWordIndex.value--;
+    int currentPara = activeParaIndex.value;
+    int currentWord = activeWordIndex.value;
 
-    if (activeWordIndex.value < 0) {
-      // Move to previous para that has matches
-      do {
-        paraIndex =
-            (paraIndex - 1 + perParaMatchCounter.keys.length) %
-            perParaMatchCounter.keys.length;
-        paraMatchCount = perParaMatchCounter[paraIndex] ?? 0;
-      } while (paraMatchCount == 0);
+    // Step back one word
+    currentWord--;
 
-      activeParaIndex.value = paraIndex;
-      activeWordIndex.value = paraMatchCount - 1;
+    if (currentWord < 0) {
+      // Find current para position in the keys list
+      int currentKeyIndex = paraKeys.indexOf(currentPara);
+
+      // Move to previous para (wrap around)
+      int prevKeyIndex =
+          (currentKeyIndex - 1 + paraKeys.length) % paraKeys.length;
+      currentPara = paraKeys[prevKeyIndex];
+
+      // Set to last word of that para
+      currentWord = (perParaMatchCounter[currentPara] ?? 1) - 1;
     }
+
+    // Update active trackers
+    activeParaIndex.value = currentPara;
+    activeWordIndex.value = currentWord;
+
+    print('⬅️ Now at para $currentPara, word $currentWord');
 
     // Refresh highlighted content
     search(searchController.text);
@@ -270,7 +283,7 @@ class HtmlSearchController extends GetxController {
   }
 
   void scrollToActivePara() {
-    final key = matchParaKeys[activeParaIndex.value];
+    final key = paragraphKeys[activeParaIndex.value];
     if (key != null && key.currentContext != null) {
       Scrollable.ensureVisible(
         key.currentContext!,

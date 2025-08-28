@@ -40,17 +40,17 @@ class HtmlSearchView extends GetView<HtmlSearchController> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    suffix: controller.totalMatchNumber.value != 0
+                    suffix: controller.totalMatchedWord.value != 0
                         ? Row(
                             mainAxisSize: MainAxisSize.min,
                             mainAxisAlignment: MainAxisAlignment.end,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               Text(
-                                "${controller.activeWordIndex.value + 1}/${controller.totalMatchNumber.value}",
+                                "${controller.activeWordIndex.value + 1}/${controller.totalMatchedWord.value}",
                               ),
                               SizedBox(width: 5),
-                              if (controller.totalMatchNumber.value > 1)
+                              if (controller.totalMatchedWord.value > 1)
                                 Column(
                                   mainAxisSize: MainAxisSize.min,
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -100,11 +100,11 @@ class HtmlSearchView extends GetView<HtmlSearchController> {
                             if (element.localName == 'p') {
                               final paraIndex = int.tryParse(element.id ?? '');
                               if (paraIndex != null &&
-                                  controller.matchParaKeys.containsKey(
+                                  controller.paragraphKeys.containsKey(
                                     paraIndex,
                                   )) {
                                 return Container(
-                                  key: controller.matchParaKeys[paraIndex],
+                                  key: controller.paragraphKeys[paraIndex],
                                   alignment: Alignment.centerLeft,
                                   // 🔥 render this <p> (with its <mark>) as HTML again
                                   child: HtmlWidget(element.outerHtml),
