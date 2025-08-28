@@ -47,7 +47,7 @@ class HtmlSearchView extends GetView<HtmlSearchController> {
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               Text(
-                                "${controller.activeWordIndex.value + 1}/${controller.totalMatchedWord.value}",
+                                "${controller.currentWordCount.value}/${controller.totalMatchedWord.value}",
                               ),
                               SizedBox(width: 5),
                               if (controller.totalMatchedWord.value > 1)
