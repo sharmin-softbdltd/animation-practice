@@ -164,7 +164,7 @@ class HtmlSearchController extends GetxController {
     final escapedQuery = RegExp.escape(query);
     final regex = RegExp(escapedQuery, caseSensitive: false);
 
-    final paragraphList = RegExp(
+    final blockList = RegExp(
       r'<p\b[^>]*>(.*?)</p>',
       caseSensitive: false,
       dotAll: true,
@@ -173,7 +173,7 @@ class HtmlSearchController extends GetxController {
     int matchWordCounter = 0;
     int blockIndex = 0;
 
-    String newContent = paragraphList.map((paraMatch) {
+    String newContent = blockList.map((paraMatch) {
       String paraText = paraMatch.group(1) ?? '';
       if (!blockKeys.containsKey(blockIndex)) {
         blockKeys[blockIndex] = GlobalKey(); // create key only once
