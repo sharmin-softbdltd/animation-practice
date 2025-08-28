@@ -136,7 +136,7 @@ class HtmlSearchController extends GetxController {
       activeBlockIndex = 0.obs;
   final Map<int, GlobalKey> blockKeys =
       {}; //for para and global key of that para
-  final Map<int, int> perBlockMatchedWords =
+  final Map<int, int> perParaMatchCounter =
       {}; // for para and how many words found which match
 
   @override
@@ -152,60 +152,70 @@ class HtmlSearchController extends GetxController {
   void search(String query) {
     if (query.isEmpty) {
       highLightedContent.value = content;
-      activeWordIndex.value = 0;
-      activeBlockIndex.value = 0;
-      totalMatchedWord.value = 0;
-      perBlockMatchedWords.clear();
+      perParaMatchCounter.clear();
       blockKeys.clear();
+      totalMatchedWord.value = 0;
       return;
     }
-    perBlockMatchedWords.clear();
 
-    final escapedQuery = RegExp.escape(query);
-    final regex = RegExp(escapedQuery, caseSensitive: false);
+    final regex = RegExp(RegExp.escape(query), caseSensitive: false);
 
-    final paragraphList = RegExp(
-      r'<p\b[^>]*>(.*?)</p>',
+    // Match paragraphs, headings, images, or any other tag block
+    final blockList = RegExp(
+      r'(<p\b[^>]*>.*?</p>|<h[1-6]\b[^>]*>.*?</h[1-6]>|<img\b[^>]*>|<[^>]+>)',
       caseSensitive: false,
       dotAll: true,
     ).allMatches(content);
 
-    int matchWordCounter = 0;
     int blockIndex = 0;
+    int matchWordCounter = 0;
+    perParaMatchCounter.clear();
+    blockKeys.clear();
 
-    String newContent = paragraphList.map((paraMatch) {
-      String paraText = paraMatch.group(1) ?? '';
-      if (!blockKeys.containsKey(blockIndex)) {
-        blockKeys[blockIndex] = GlobalKey(); // create key only once
+    String newContent = blockList.map((blockMatch) {
+      String block = blockMatch.group(0) ?? '';
+      int blockWordCounter = 0;
+      if (block.startsWith('<p') || block.startsWith('<h')) {
+        final innerMatch = RegExp(
+          r'(<p\b[^>]*>|<h[1-6]\b[^>]*>)(.*?)(</p>|</h[1-6]>)',
+          caseSensitive: false,
+          dotAll: true,
+        ).firstMatch(block);
+
+        String innerText = innerMatch?.group(2) ?? '';
+        String openTag = innerMatch?.group(1) ?? '';
+        String closeTag = innerMatch?.group(3) ?? '';
+
+        if (regex.hasMatch(innerText)) {
+          if (!blockKeys.containsKey(blockIndex)) {
+            blockKeys[blockIndex] = GlobalKey();
+          }
+
+          String highlighted = innerText.replaceAllMapped(regex, (match) {
+            final color =
+                (blockIndex == activeBlockIndex.value &&
+                    blockWordCounter == activeWordIndex.value)
+                ? "red"
+                : "yellow";
+
+            blockWordCounter++;
+            matchWordCounter++;
+
+            return '<mark style="background-color:$color;">${match.group(0)}</mark>';
+          });
+
+          perParaMatchCounter[blockIndex] = blockWordCounter;
+          final result = '$openTag id="$blockIndex">$highlighted$closeTag';
+          blockIndex++;
+          return '$openTag$highlighted$closeTag';
+        } else {
+          final result = '$openTag id="$blockIndex">$innerText$closeTag';
+          blockIndex++;
+          return result;
+        }
       }
 
-      if (regex.hasMatch(paraText)) {
-        //IF WORD EXIST IN THAT PARA THEN STORE GLOBAL KEY FOR THAT PARA WITH INDEX
-        int paraWordCounter = 0;
-
-        String highlighted = paraText.replaceAllMapped(regex, (match) {
-          final color =
-              (blockIndex == activeBlockIndex.value &&
-                  paraWordCounter == activeWordIndex.value)
-              ? "red"
-              : "yellow";
-
-          paraWordCounter++;
-          matchWordCounter++;
-
-          return '<mark style="background-color:$color;">${match.group(0)}</mark>';
-        });
-
-        //IF WORD MATCH THEN INCREASE HOW MANY WORDS ARE THERE
-        perBlockMatchedWords[blockIndex] = paraWordCounter;
-
-        final result = '<p id="$blockIndex">$highlighted</p>';
-        blockIndex++;
-        return result;
-      } else {
-        blockIndex++;
-        return paraMatch.group(0)!;
-      }
+      return block;
     }).join();
 
     highLightedContent.value = newContent;
@@ -215,29 +225,29 @@ class HtmlSearchController extends GetxController {
   void nextMatch() {
     if (totalMatchedWord.value == 0) return;
 
-    final paraKeys = perBlockMatchedWords.keys.toList()..sort();
+    final paraKeys = perParaMatchCounter.keys.toList()..sort();
 
     int currentWord = activeWordIndex.value;
-    int currentPara = activeBlockIndex.value;
-    int paraMatchCount = perBlockMatchedWords[currentPara] ?? 0;
+    int currentBlock = activeBlockIndex.value;
+    int paraMatchCount = perParaMatchCounter[currentBlock] ?? 0;
     currentWord++;
 
     if (currentWord >= paraMatchCount) {
       // Find index of currentPara in the list of keys
-      int currentKeyIndex = paraKeys.indexOf(currentPara);
+      int currentKeyIndex = paraKeys.indexOf(currentBlock);
 
       // Move to next para (wrap around with %)
       int nextKeyIndex = (currentKeyIndex + 1) % paraKeys.length;
-      currentPara = paraKeys[nextKeyIndex];
+      currentBlock = paraKeys[nextKeyIndex];
 
       // Reset word index for that para
       currentWord = 0;
     }
 
-    activeBlockIndex.value = currentPara;
+    activeBlockIndex.value = currentBlock;
     activeWordIndex.value = currentWord;
 
-    print('⬅️ Now at para $currentPara, word $currentWord');
+    print('⬅️ Now at para $currentBlock, word $currentWord');
 
     search(searchController.text);
 
@@ -248,9 +258,9 @@ class HtmlSearchController extends GetxController {
     if (totalMatchedWord.value == 0) return;
 
     // Sorted list of all paras that have matches
-    final paraKeys = perBlockMatchedWords.keys.toList()..sort();
+    final paraKeys = perParaMatchCounter.keys.toList()..sort();
 
-    int currentPara = activeBlockIndex.value;
+    int currentBlock = activeBlockIndex.value;
     int currentWord = activeWordIndex.value;
 
     // Step back one word
@@ -258,22 +268,22 @@ class HtmlSearchController extends GetxController {
 
     if (currentWord < 0) {
       // Find current para position in the keys list
-      int currentKeyIndex = paraKeys.indexOf(currentPara);
+      int currentKeyIndex = paraKeys.indexOf(currentBlock);
 
       // Move to previous para (wrap around)
       int prevKeyIndex =
           (currentKeyIndex - 1 + paraKeys.length) % paraKeys.length;
-      currentPara = paraKeys[prevKeyIndex];
+      currentBlock = paraKeys[prevKeyIndex];
 
       // Set to last word of that para
-      currentWord = (perBlockMatchedWords[currentPara] ?? 1) - 1;
+      currentWord = (perParaMatchCounter[currentBlock] ?? 1) - 1;
     }
 
     // Update active trackers
-    activeBlockIndex.value = currentPara;
+    activeBlockIndex.value = currentBlock;
     activeWordIndex.value = currentWord;
 
-    print('⬅️ Now at para $currentPara, word $currentWord');
+    print('⬅️ Now at para $currentBlock, word $currentWord');
 
     // Refresh highlighted content
     search(searchController.text);

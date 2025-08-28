@@ -100,11 +100,9 @@ class HtmlSearchView extends GetView<HtmlSearchController> {
                             if (element.localName == 'p') {
                               final paraIndex = int.tryParse(element.id ?? '');
                               if (paraIndex != null &&
-                                  controller.paragraphKeys.containsKey(
-                                    paraIndex,
-                                  )) {
+                                  controller.blockKeys.containsKey(paraIndex)) {
                                 return Container(
-                                  key: controller.paragraphKeys[paraIndex],
+                                  key: controller.blockKeys[paraIndex],
                                   alignment: Alignment.centerLeft,
                                   // 🔥 render this <p> (with its <mark>) as HTML again
                                   child: HtmlWidget(element.outerHtml),
