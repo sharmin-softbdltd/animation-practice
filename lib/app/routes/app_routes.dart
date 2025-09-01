@@ -6,6 +6,7 @@ abstract class Routes {
 
   static const HOME = _Paths.HOME;
   static const HTML_SEARCH = _Paths.HTML_SEARCH;
+  static const HTML = _Paths.HTML;
 }
 
 abstract class _Paths {
@@ -13,4 +14,5 @@ abstract class _Paths {
 
   static const HOME = '/home';
   static const HTML_SEARCH = '/html-search';
+  static const HTML = '/html';
 }
