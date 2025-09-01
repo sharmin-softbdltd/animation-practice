@@ -35,6 +35,8 @@ class HtmlSearchController extends GetxController {
     include Provider, Riverpod, GetX, and BLoC. Each approach has its own strengths 
     and trade-offs depending on application complexity and developer preference.
   </p>
+  <h5>Big HTML Content flutter</h5>
+  
 
   <p>
     Networking in Flutter is commonly done using HTTP, Dio, or WebSockets. 
@@ -68,6 +70,8 @@ class HtmlSearchController extends GetxController {
     rows, columns, text, images, and buttons. Flutter’s hot reload makes UI 
     experimentation very efficient for developers.
   </p>
+  <h3>Big HTML Content flutter</h3>
+  
 
   <p>
     Performance optimization involves profiling your app, reducing unnecessary 
@@ -137,7 +141,7 @@ class HtmlSearchController extends GetxController {
   // </html>
   // ''';
 
-  final activeMatchIndex = 0.obs;
+  final activeMatchIndex = 0.obs, totalMatchedWord = 0.obs;
   final blockKeys = <GlobalKey>[].obs;
   final blocks = <String>[].obs;
   final searchTerm = "".obs;
@@ -198,6 +202,8 @@ class HtmlSearchController extends GetxController {
         allMatches.add(MatchInfo(blockIndex: i, start: m.start, end: m.end));
       }
     }
+    totalMatchedWord.value = allMatches.length;
+    print("allMatches.length ${allMatches.length}");
 
     if (allMatches.isNotEmpty) scrollToActive();
   }

@@ -27,63 +27,83 @@ class HtmlSearchView extends GetView<HtmlSearchController> {
           padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
           child: Column(
             children: [
-              TextFormField(
-                controller: controller.searchController,
-                decoration: InputDecoration(
-                  hintText: 'Search...',
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 15,
+              Obx(() {
+                return TextFormField(
+                  controller: controller.searchController,
+
+                  decoration: InputDecoration(
+                    hintText: 'Search...',
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 15,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    suffix: controller.totalMatchedWord.value != 0
+                        ? Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              if (controller.totalMatchedWord.value > 1)
+                                InkWell(
+                                  onTap: controller.prevMatch,
+                                  child: Icon(
+                                    Icons.keyboard_arrow_left,
+                                    size: 15,
+                                  ),
+                                ),
+                              Text(
+                                "${controller.activeMatchIndex.value + 1}/${controller.totalMatchedWord.value}",
+                              ),
+                              SizedBox(width: 5),
+                              if (controller.totalMatchedWord.value > 1)
+                                InkWell(
+                                  onTap: controller.nextMatch,
+                                  child: Icon(
+                                    Icons.keyboard_arrow_right,
+                                    size: 15,
+                                  ),
+                                ),
+                              // if (controller.totalMatchedWord.value > 1)
+                              //   Column(
+                              //     mainAxisSize: MainAxisSize.min,
+                              //     mainAxisAlignment: MainAxisAlignment.center,
+                              //     children: [
+                              //       SizedBox(
+                              //         height: 10,
+                              //         child: Center(
+                              //           child: InkWell(
+                              //             onTap: controller.prevMatch,
+                              //             child: Icon(
+                              //               Icons.keyboard_arrow_up,
+                              //               size: 15,
+                              //             ),
+                              //           ),
+                              //         ),
+                              //       ),
+                              //       SizedBox(
+                              //         height: 10,
+                              //         child: Center(
+                              //           child: InkWell(
+                              //             onTap: controller.nextMatch,
+                              //             child: Icon(
+                              //               Icons.keyboard_arrow_down,
+                              //               size: 15,
+                              //             ),
+                              //           ),
+                              //         ),
+                              //       ),
+                              //     ],
+                              //   ),
+                            ],
+                          )
+                        : null,
                   ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  // suffix: controller.totalMatchedWord.value != 0
-                  //     ? Row(
-                  //         mainAxisSize: MainAxisSize.min,
-                  //         mainAxisAlignment: MainAxisAlignment.end,
-                  //         crossAxisAlignment: CrossAxisAlignment.center,
-                  //         children: [
-                  //           Text(
-                  //             "${controller.currentWordCount.value}/${controller.totalMatchedWord.value}",
-                  //           ),
-                  //           SizedBox(width: 5),
-                  //           if (controller.totalMatchedWord.value > 1)
-                  //             Column(
-                  //               mainAxisSize: MainAxisSize.min,
-                  //               mainAxisAlignment: MainAxisAlignment.center,
-                  //               children: [
-                  //                 SizedBox(
-                  //                   height: 10,
-                  //                   child: Center(
-                  //                     child: InkWell(
-                  //                       onTap: controller.prevMatch,
-                  //                       child: Icon(
-                  //                         Icons.keyboard_arrow_up,
-                  //                         size: 15,
-                  //                       ),
-                  //                     ),
-                  //                   ),
-                  //                 ),
-                  //                 SizedBox(
-                  //                   height: 10,
-                  //                   child: Center(
-                  //                     child: InkWell(
-                  //                       onTap: controller.nextMatch,
-                  //                       child: Icon(
-                  //                         Icons.keyboard_arrow_down,
-                  //                         size: 15,
-                  //                       ),
-                  //                     ),
-                  //                   ),
-                  //                 ),
-                  //               ],
-                  //             ),
-                  //         ],
-                  //       )
-                  //     : null,
-                ),
-              ),
+                  onChanged: controller.onSearchChanged,
+                );
+              }),
 
               Expanded(
                 child: Obx(() {
